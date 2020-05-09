@@ -154,8 +154,8 @@
         "signature": "1377923021927244ea19433873b997ad8585533b0a56d5de29cda497f7842756"
       },
       "./lib.ts": {
-        "version": "a264bb0e489f162c3b4297d432b1c5044ede11913c54960af42a73b23b429539",
-        "signature": "77c08c10a976030b575bf9fbf13725af62e175a1c4b1863780ec8b6f4de40d74"
+        "version": "12386f3edaeabab68d2286d0ba8d69f9cc87798ac8138473f59a7ff2dcae70e5",
+        "signature": "e1bb091687bbaec73e0cbeb2f002f538d2297032117a43d20c084539764366e3"
       },
       "./test.ts": {
         "version": "512b7a27e8c3a4221f63667fc8c1ba04dd14d8ed875ac2f4ff049df16b0aac17",
@@ -182,8 +182,7 @@
     },
     "exportedModulesMap": {},
     "semanticDiagnosticsPerFile": [
-      "./lib.ts",
-      "./test.ts",
+      "../../../appdata/local/yarn/data/global/node_modules/typescript/lib/lib.es5.d.ts",
       "../../../appdata/local/yarn/data/global/node_modules/typescript/lib/lib.es2015.d.ts",
       "../../../appdata/local/yarn/data/global/node_modules/typescript/lib/lib.es2016.d.ts",
       "../../../appdata/local/yarn/data/global/node_modules/typescript/lib/lib.es2017.d.ts",
@@ -191,7 +190,6 @@
       "../../../appdata/local/yarn/data/global/node_modules/typescript/lib/lib.es2019.d.ts",
       "../../../appdata/local/yarn/data/global/node_modules/typescript/lib/lib.es2020.d.ts",
       "../../../appdata/local/yarn/data/global/node_modules/typescript/lib/lib.esnext.d.ts",
-      "../../../appdata/local/yarn/data/global/node_modules/typescript/lib/lib.es5.d.ts",
       "../../../appdata/local/yarn/data/global/node_modules/typescript/lib/lib.dom.d.ts",
       "../../../appdata/local/yarn/data/global/node_modules/typescript/lib/lib.es2015.core.d.ts",
       "../../../appdata/local/yarn/data/global/node_modules/typescript/lib/lib.es2015.collection.d.ts",
@@ -221,7 +219,32 @@
       "../../../appdata/local/yarn/data/global/node_modules/typescript/lib/lib.es2020.promise.d.ts",
       "../../../appdata/local/yarn/data/global/node_modules/typescript/lib/lib.es2020.string.d.ts",
       "../../../appdata/local/yarn/data/global/node_modules/typescript/lib/lib.es2020.symbol.wellknown.d.ts",
-      "../../../appdata/local/yarn/data/global/node_modules/typescript/lib/lib.esnext.intl.d.ts"
+      "../../../appdata/local/yarn/data/global/node_modules/typescript/lib/lib.esnext.intl.d.ts",
+      "./test.ts",
+      [
+        "./lib.ts",
+        [
+          {
+            "file": "./lib.ts",
+            "start": 1965,
+            "length": 3,
+            "code": 2345,
+            "category": 1,
+            "messageText": {
+              "messageText": "Argument of type '{ a: number; }' is not assignable to parameter of type 'Iterable<any>'.",
+              "category": 1,
+              "code": 2345,
+              "next": [
+                {
+                  "messageText": "Object literal may only specify known properties, and 'a' does not exist in type 'Iterable<any>'.",
+                  "category": 1,
+                  "code": 2353
+                }
+              ]
+            }
+          }
+        ]
+      ]
     ]
   },
   "version": "3.8.3"

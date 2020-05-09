@@ -45,19 +45,56 @@ exports.any = any;
 function all(arraylike) {
 }
 exports.all = all;
+function print(data) {
+    console.log(data);
+}
+exports.print = print;
 function* zip(...arraylikes) {
     let itors = arraylikes.map(v => v[Symbol.iterator]());
     for (;;) {
         //对所有itor取next 如果全部成功则yield 否则返回
         let ress = itors.map(v => v.next());
-        //not any false
-        if (!any(ress.map(v => !v.done))) {
+        // print(ress);
+        //如果有一个结束
+        if (any(ress.map(v => v.done))) {
             //返回
-            yield ress.map(v => v.value);
+            return undefined;
         }
         else
-            return undefined;
+            yield ress.map(v => v.value);
     }
 }
 exports.zip = zip;
-zip([1, 2, 3]);
+//数据容器构造区域
+function list(iter) {
+    if (iter == null)
+        return list([]);
+    let ret = [];
+    for (let a of iter) {
+        ret.push(a);
+    }
+    return ret;
+}
+exports.list = list;
+function map() {
+}
+exports.map = map;
+function set() {
+}
+exports.set = set;
+//数据操作
+function* keys(obj) {
+    //取对象的key或map的所有key 枚举
+    if (obj instanceof Map) {
+        //枚举
+        obj.forEach((v, k) => yield k);
+    }
+    else if (typeof obj == "object") {
+        for (let k in obj) {
+            yield k;
+        }
+    }
+}
+exports.keys = keys;
+print(list(zip(range(1, 5), range(10, 19))));
+print(list({ a: 1 }));
