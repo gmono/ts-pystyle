@@ -169,10 +169,9 @@ type list<T>=Array<T>;
 type ndarray<T=any>=T extends ForceType ? TypedNDArray<T>:NDArray<T>;
 
 
-interface TypedArrayExtend extends TypedArrayPrototype
-{
-    
-}
+
+
+
 //标识有类型数组
 type TypedNDArray<T>=T extends uint8? Uint8Array:
                     T extends uint16? Uint16Array:
@@ -182,6 +181,15 @@ type TypedNDArray<T>=T extends uint8? Uint8Array:
                     T extends int32? Int32Array:
                     T extends float32? Float32Array:
                     T extends float64? Float64Array:never;
+
+type TypedArray=Uint8Array|
+                Uint16Array|
+                Uint32Array|
+                Int8Array|
+                Int16Array|
+                Int32Array|
+                Float32Array|
+                Float64Array;
 
 
 //标识普通数组
@@ -195,5 +203,16 @@ interface NDArray<T=any> extends Array<T>{
     reshape():NDArray<T>;
     transpose():NDArray<T>;
 }
+//这里实际扩展
+Array.prototype["reshape"]=function(this:any[]){
+    //flat并重新填充数组
+    
+}
 
-let a:ndarray<string>;
+//采用函数转换方法
+function array<T>(arr:T[]){
+    return arr as unknown as  ndarray<T>;
+}
+
+let a=array(["hello"])
+

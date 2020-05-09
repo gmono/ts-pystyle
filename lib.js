@@ -45,8 +45,8 @@ exports.any = any;
 function all(arraylike) {
 }
 exports.all = all;
-function print(data) {
-    console.log(data);
+function print(...data) {
+    console.log(...data);
 }
 exports.print = print;
 function* zip(...arraylikes) {
@@ -76,10 +76,21 @@ function list(iter) {
     return ret;
 }
 exports.list = list;
-function map() {
+function dict(iter) {
+    //构造一个map容器
+    let m = new Map();
+    for (let a of iter) {
+        m.set(a[0], a[1]);
+    }
+    return m;
 }
-exports.map = map;
-function set() {
+exports.dict = dict;
+function set(iter) {
+    let m = new Set();
+    for (let a of iter) {
+        m.add(a);
+    }
+    return m;
 }
 exports.set = set;
 //数据操作
@@ -87,7 +98,9 @@ function* keys(obj) {
     //取对象的key或map的所有key 枚举
     if (obj instanceof Map) {
         //枚举
-        obj.forEach((v, k) => yield k);
+        for (let a of obj.keys()) {
+            yield a;
+        }
     }
     else if (typeof obj == "object") {
         for (let k in obj) {
@@ -96,5 +109,35 @@ function* keys(obj) {
     }
 }
 exports.keys = keys;
-print(list(zip(range(1, 5), range(10, 19))));
-print(list({ a: 1 }));
+//以下为调用协议
+function len(obj) {
+    if ("length" in obj) {
+        return obj.length;
+    }
+    else if ("size" in obj) {
+        return obj.size;
+    }
+    else if ("count" in obj) {
+        return obj.count;
+    }
+    else if ("__len__" in obj) {
+        return obj.__len__();
+    }
+    else if (typeof obj == "object") {
+        let s = 0;
+        for (let i in obj) {
+            s++;
+        }
+        return s;
+    }
+}
+exports.len = len;
+//这里实际扩展
+Array.prototype["reshape"] = function () {
+    //flat并重新填充数组
+};
+//采用函数转换方法
+function array(arr) {
+    return arr;
+}
+let a = array(["hello"]);
