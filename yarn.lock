@@ -2,6 +2,31 @@
 # yarn lockfile v1
 
 
+"@types/node@*":
+  version "14.11.8"
+  resolved "https://registry.npmjs.org/@types/node/-/node-14.11.8.tgz#fe2012f2355e4ce08bca44aeb3abbb21cf88d33f"
+
+"@types/prompts@^2.0.9":
+  version "2.0.9"
+  resolved "https://registry.npmjs.org/@types/prompts/-/prompts-2.0.9.tgz#19f419310eaa224a520476b19d4183f6a2b3bd8f"
+  dependencies:
+    "@types/node" "*"
+
 denque@^1.4.1:
   version "1.4.1"
   resolved "https://registry.npmjs.org/denque/-/denque-1.4.1.tgz#6744ff7641c148c3f8a69c307e51235c1f4a37cf"
+
+kleur@^3.0.3:
+  version "3.0.3"
+  resolved "https://registry.npmjs.org/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
+
+prompts@^2.3.2:
+  version "2.3.2"
+  resolved "https://registry.npmjs.org/prompts/-/prompts-2.3.2.tgz#480572d89ecf39566d2bd3fe2c9fccb7c4c0b068"
+  dependencies:
+    kleur "^3.0.3"
+    sisteransi "^1.0.4"
+
+sisteransi@^1.0.4:
+  version "1.0.5"
+  resolved "https://registry.npmjs.org/sisteransi/-/sisteransi-1.0.5.tgz#134d681297756437cc05ca01370d3a7a571075ed"

@@ -1,4 +1,4 @@
-
+import prompts from "prompts";
 
 export async function delay(mis){
     return new Promise<void>((resolve)=>{
@@ -8,10 +8,37 @@ export async function delay(mis){
     })   
 }
 
+// 基本便利函数
 //不包括max 从0开始
 export function randint(max: number) {
     return Math.floor(Math.random() * max) % max;
 }
+export async function input(message: string) {
+    let res = await prompts({
+        message,
+        name: "result",
+        type: "text"
+    });
+    return res.result as string;
+}
+//有待改进 可从choices中提取类型 约束返回类型
+export async function select(message: string, choices: prompts.PromptObject["choices"] | string[]) {
+    let choicesarr: prompts.PromptObject["choices"] = null;
+    if (typeof choices[0] == "string") {
+        choicesarr = (choices as string[]).map((v, idx) => ({ title: v, value: idx.toString() }));
+    }
+    else
+        choicesarr = choices as typeof choicesarr;
+    let res = await prompts({
+        message,
+        name: "result",
+        type: "select",
+        choices: choicesarr
+    });
+    return res.result as string;
+}
+
+
 
 //仿python基础设施
 export function *range(start:number,space?:number,end?:number):Iterable<number>{
@@ -38,7 +65,7 @@ export function* enumerate<T>(arraylike:Iterable<T>):Iterable<[number,T]>{
         yield [now++,a]
     }
 }
-
+//boolean运算函数 其中收到的值被当作bool值
 export function any(arraylike:Iterable<any>)
 {
     for(let a of arraylike){
@@ -48,15 +75,41 @@ export function any(arraylike:Iterable<any>)
 }
 export function all(arraylike:Iterable<any>)
 {
+    return !any(not(arraylike));
+}
+export function not(arraylike:Iterable<boolean>){
+    let ar=[]
+    for(let a of arraylike) ar.push(!a);
+    return ar;
+}
+//实现了此接口的可提供比较
+export type CompareAble<D>={
+    __equal__(b:D):boolean;
+};
+export type CompareDest<D>=D|Iterable<D>;
+export function equal<D>(ar:Iterable<CompareAble<D>>,dest:CompareDest<D>){
+    let ret=[] as boolean[];
+    if(Symbol.iterator in  dest){
+        if(trustType<Iterable<D>>(dest))
+            for(let [a,b] of zip(ar,dest)){
+                ret.push(a.__equal__(b))
+            }
+    }else{
+        for(let a of ar){
+            if(trustType<D>(dest))
+            ret.push(a.__equal__(dest));
+        }
+    }
+    return ret;
 }
 
 export function print<T extends any[]>(...data:T){
     console.log(...data);
 }
 
-type MapToIteratable<T extends any[]>={[R in keyof T]:Iterable<T[R]>};
+export type MapToIteratable<T extends any[]>={[R in keyof T]:Iterable<T[R]>};
 //用作类型引用
-type ZipType<T extends any[]>=Iterable<T>;
+export type ZipType<T extends any[]>=Iterable<T>;
 //将一个数组列表压缩为一个元组列表
 export function *zip<T extends any[]>(...arraylikes:MapToIteratable<T>):Generator<T,void,void>{
     let itors=arraylikes.map(v=>v[Symbol.iterator]());
@@ -74,7 +127,7 @@ export function *zip<T extends any[]>(...arraylikes:MapToIteratable<T>):Generato
 }
 
 //两次zip还原
-let a=list(zip(...list(zip(...[[1,2,3],[2,3,4]]))))
+// let a=list(zip(...list(zip(...[[1,2,3],[2,3,4]]))))
 
 //基本操作
 //打乱
@@ -154,10 +207,10 @@ export function insert<T>(arl:Iterable<T>,point:number,val:T):T[]{
 
 
 //基本数据
-interface AsInt{
+export interface AsInt{
     toInt():number;
 }
-interface AsFloat{
+export interface AsFloat{
     toFloat():number;
 }
 export function int(other:string|number|AsInt){
@@ -167,12 +220,12 @@ export function int(other:string|number|AsInt){
         return other.toInt()
     }else return 0;
 }
-type AsString={toString:()=>string}|;
+export type AsString={toString:()=>string}|number|string;
 export function str(n:AsString){
     if(assertType(n,"object")){
         return n.toString();
     }else if(assertType(n,"string")) return n;
-
+    else
     return new Number(n).toString();
 }
 export function float(other:string|number|AsFloat){
@@ -182,15 +235,21 @@ export function float(other:string|number|AsFloat){
         return other.toFloat()
     }else return 0;
 }
+export function json(obj:any){
+    return JSON.stringify(obj);
+}
+export function parse(json:string){
+    return JSON.parse(json);
+}
 //特殊工具函数
 export function assert(n:boolean,msg:string){
     if(!n) throw new Error(msg);
     
 }
 
-type  TypeList= RawTypeList| "object" | "function";
-type RawTypeList="string" | "number" | "bigint" | "boolean" | "symbol" | "undefined";
-type TypeMap<name extends TypeList>=name extends "string"? string:
+export type  TypeList= RawTypeList| "object" | "function";
+export type RawTypeList="string" | "number" | "bigint" | "boolean" | "symbol" | "undefined";
+export type TypeMap<name extends TypeList>=name extends "string"? string:
                     name extends "number"? number:
                     name extends "bigint"? bigint:
                     name extends "boolean"? boolean:
@@ -198,7 +257,7 @@ type TypeMap<name extends TypeList>=name extends "string"? string:
                     name extends "function"? Function:
                     name extends "undefined"? undefined:
                     name extends "object"? object:never;
-type ClassType=new(...args)=>any;
+export type ClassType=new(...args)=>any;
 //此为类型判断函数系列 可用于类型推导 
 //用法: assertType(a,b) b为string时 判断原生类型 b为class时判断实例类型
 //! 不可用于判断接口类型和类型别名type 
@@ -255,9 +314,12 @@ export function *keys<T extends object=any,K=any,V=any>(obj:T|Map<K,V>)
     }
 }
 
-type HasLength={length:number}|{size:number}|{count:number}|{__len__():number};
+export type HasLength={length:number}|{size:number}|{count:number}|{__len__():number};
 //以下为调用协议
+//此函数可以得到 map set list array 拥有__len__函数的对象和 object本身的属性数
+//等同类数据 包括使用object实现是set 中的element数量
 export function len(obj:Iterable<any>|HasLength|object){
+    
     if("length" in obj){
         return obj.length
     }else if ("size" in obj){
@@ -266,6 +328,9 @@ export function len(obj:Iterable<any>|HasLength|object){
         return obj.count;
     }else if("__len__" in obj){
         return obj.__len__()
+    }else if(Symbol.iterator in obj){
+        if(trustType<Iterable<any>>(obj))
+            return len(list(obj));
     }else if(typeof obj=="object"){
         let s=0;
         for(let i in obj){

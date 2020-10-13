@@ -3,7 +3,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.mapToObj = exports.len = exports.keys = exports.set = exports.zipToDict = exports.dict = exports.list = exports.trustType = exports.assertType = exports.assert = exports.float = exports.str = exports.int = exports.insert = exports.max = exports.min = exports.sample = exports.extract = exports.byIdx = exports.sorted = exports.shuffle = exports.zip = exports.print = exports.all = exports.any = exports.enumerate = exports.range = exports.randint = exports.delay = void 0;
+exports.mapToObj = exports.len = exports.keys = exports.set = exports.zipToDict = exports.dict = exports.list = exports.trustType = exports.assertType = exports.assert = exports.parse = exports.json = exports.float = exports.str = exports.int = exports.insert = exports.max = exports.min = exports.sample = exports.extract = exports.byIdx = exports.sorted = exports.shuffle = exports.zip = exports.print = exports.equal = exports.not = exports.all = exports.any = exports.enumerate = exports.range = exports.select = exports.input = exports.randint = exports.delay = void 0;
+const prompts_1 = __importDefault(require("prompts"));
 async function delay(mis) {
     return new Promise((resolve) => {
         setTimeout(() => {
@@ -12,11 +13,38 @@ async function delay(mis) {
     });
 }
 exports.delay = delay;
+// 基本便利函数
 //不包括max 从0开始
 function randint(max) {
     return Math.floor(Math.random() * max) % max;
 }
 exports.randint = randint;
+async function input(message) {
+    let res = await prompts_1.default({
+        message,
+        name: "result",
+        type: "text"
+    });
+    return res.result;
+}
+exports.input = input;
+//有待改进 可从choices中提取类型 约束返回类型
+async function select(message, choices) {
+    let choicesarr = null;
+    if (typeof choices[0] == "string") {
+        choicesarr = choices.map((v, idx) => ({ title: v, value: idx.toString() }));
+    }
+    else
+        choicesarr = choices;
+    let res = await prompts_1.default({
+        message,
+        name: "result",
+        type: "select",
+        choices: choicesarr
+    });
+    return res.result;
+}
+exports.select = select;
 //仿python基础设施
 function* range(start, space, end) {
     //允许 range(a,c,b) range(b) range(a,b)
@@ -43,6 +71,7 @@ function* enumerate(arraylike) {
     }
 }
 exports.enumerate = enumerate;
+//boolean运算函数 其中收到的值被当作bool值
 function any(arraylike) {
     for (let a of arraylike) {
         if (a)
@@ -52,8 +81,33 @@ function any(arraylike) {
 }
 exports.any = any;
 function all(arraylike) {
+    return !any(not(arraylike));
 }
 exports.all = all;
+function not(arraylike) {
+    let ar = [];
+    for (let a of arraylike)
+        ar.push(!a);
+    return ar;
+}
+exports.not = not;
+function equal(ar, dest) {
+    let ret = [];
+    if (Symbol.iterator in dest) {
+        if (trustType(dest))
+            for (let [a, b] of zip(ar, dest)) {
+                ret.push(a.__equal__(b));
+            }
+    }
+    else {
+        for (let a of ar) {
+            if (trustType(dest))
+                ret.push(a.__equal__(dest));
+        }
+    }
+    return ret;
+}
+exports.equal = equal;
 function print(...data) {
     console.log(...data);
 }
@@ -76,7 +130,7 @@ function* zip(...arraylikes) {
 }
 exports.zip = zip;
 //两次zip还原
-let a = list(zip(...list(zip(...[[1, 2, 3], [2, 3, 4]]))));
+// let a=list(zip(...list(zip(...[[1,2,3],[2,3,4]]))))
 //基本操作
 //打乱
 //双向队列 支持中间删除
@@ -177,7 +231,8 @@ function str(n) {
     }
     else if (assertType(n, "string"))
         return n;
-    return new Number(n).toString();
+    else
+        return new Number(n).toString();
 }
 exports.str = str;
 function float(other) {
@@ -192,6 +247,14 @@ function float(other) {
         return 0;
 }
 exports.float = float;
+function json(obj) {
+    return JSON.stringify(obj);
+}
+exports.json = json;
+function parse(json) {
+    return JSON.parse(json);
+}
+exports.parse = parse;
 //特殊工具函数
 function assert(n, msg) {
     if (!n)
@@ -252,6 +315,8 @@ function* keys(obj) {
 }
 exports.keys = keys;
 //以下为调用协议
+//此函数可以得到 map set list array 拥有__len__函数的对象和 object本身的属性数
+//等同类数据 包括使用object实现是set 中的element数量
 function len(obj) {
     if ("length" in obj) {
         return obj.length;
@@ -264,6 +329,10 @@ function len(obj) {
     }
     else if ("__len__" in obj) {
         return obj.__len__();
+    }
+    else if (Symbol.iterator in obj) {
+        if (trustType(obj))
+            return len(list(obj));
     }
     else if (typeof obj == "object") {
         let s = 0;
