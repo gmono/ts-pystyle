@@ -452,8 +452,8 @@
         "affectsGlobalScope": false
       },
       "./lib.ts": {
-        "version": "3e3910ded4417cc64b47ed9644eb10b375821de1bb05003804785e45ffeec23a",
-        "signature": "bb2f91a6ea7b54cf99ddefa1939a5f012f343d4d8e3bfd746077cd547a863785",
+        "version": "05a4ec4bc7f6824815d0406c4945bff3bab91e92f979e1724f8038ab152b7ff0",
+        "signature": "ea93dd95641ad379fec0e437f74bd99e5be91be47e879a07f457651a092ee907",
         "affectsGlobalScope": false
       },
       "./test.ts": {

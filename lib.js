@@ -45,7 +45,6 @@ async function select(message, choices) {
     return res.result;
 }
 exports.select = select;
-//仿python基础设施
 function* range(start, space, end) {
     //允许 range(a,c,b) range(b) range(a,b)
     if (space == null && end == null) {

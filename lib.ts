@@ -41,6 +41,9 @@ export async function select(message: string, choices: prompts.PromptObject["cho
 
 
 //仿python基础设施
+export function range(end:number):Iterable<number>;
+export function range(start:number,end:number):Iterable<number>;
+export function range(start:number,space:number,end:number):Iterable<number>;
 export function *range(start:number,space?:number,end?:number):Iterable<number>{
     //允许 range(a,c,b) range(b) range(a,b)
     if(space==null&&end==null){
