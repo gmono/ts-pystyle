@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.mapToObj = exports.len = exports.keys = exports.set = exports.zipToDict = exports.dict = exports.list = exports.isAsyncIter = exports.isIter = exports.trustType = exports.assertType = exports.assert = exports.parse = exports.json = exports.float = exports.str = exports.int = exports.insert = exports.max = exports.min = exports.sample = exports.extract = exports.byIdx = exports.sorted = exports.shuffle = exports.zip = exports.iter = exports.print = exports.equal = exports.not = exports.all = exports.any = exports.enumerate = exports.range = exports.select = exports.input = exports.randint = exports.delay = void 0;
+exports.call = exports.mapToObj = exports.len = exports.keys = exports.set = exports.zipToDict = exports.dict = exports.list = exports.isAsyncIter = exports.isIter = exports.trustType = exports.assertType = exports.assert = exports.parse = exports.json = exports.float = exports.str = exports.int = exports.insert = exports.max = exports.min = exports.sample = exports.extract = exports.byIdx = exports.sorted = exports.shuffle = exports.zip = exports.iter = exports.print = exports.equal = exports.not = exports.all = exports.any = exports.enumerate = exports.range = exports.select = exports.input = exports.randint = exports.delay = void 0;
 const prompts_1 = __importDefault(require("prompts"));
 async function delay(mis) {
     return new Promise((resolve) => {
@@ -429,6 +429,12 @@ function mapToObj(map = new Map()) {
     return r;
 }
 exports.mapToObj = mapToObj;
+//把对象也转化为一个iterable
+//便利函数部分
+function call(func) {
+    func();
+}
+exports.call = call;
 //标识普通数组
 //原始列表未list 普通数组即弱类型数组 普通数组有的函数强类型数组一样有
 //实际分开实现

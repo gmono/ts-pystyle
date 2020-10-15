@@ -495,6 +495,11 @@ export function mapToObj(map:Map<any,any>=new Map()){
 }
 //把对象也转化为一个iterable
 
+//便利函数部分
+
+export function call(func:()=>any){
+    func();
+}
 
 //以下为类型扩展部分
 

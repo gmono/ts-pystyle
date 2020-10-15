@@ -1,8 +1,17 @@
 # 说明
 在Typescript中实现Python风格的变成，如
 ```ts
-print(data)
-let a=list(zip(...list(zip(...[[1,2,3],[2,3,4]]))))
+call(async ()=>{
+    let a=zip(zip([[1,2,3],[2,3,4]]))
+    let lst=list(a)
+    for(;;){
+      await delay(1000);
+      let test=int(await input("输入数字:"))
+      for(let [a,b] of enumerate(zip(zip(range(test),range(test,test*2)))) ){
+        print(a,b)
+      }
+    }
+})
 ```
 其中a的类型为[number,number][]    
 # 内容

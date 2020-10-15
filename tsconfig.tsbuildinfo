@@ -452,12 +452,12 @@
         "affectsGlobalScope": false
       },
       "./lib.ts": {
-        "version": "f722eb4018bc5ee6c795b7335c0f0b22f8498edf241c22a84881212e808eadb3",
-        "signature": "f1ae8bf7704cbdd3a113b908828230f3c70cc688a8cfda3939f0710f86e15f20",
+        "version": "fb0d0a0daf292220c2d05cb3fc9a3d836db481dac0a56870c2d62d03aeaa3c52",
+        "signature": "efcde41d0a64dd565eb0cd98d985bc2ab1a7ed05275c676cee10b6a4eb1410e0",
         "affectsGlobalScope": false
       },
       "./test.ts": {
-        "version": "f35788adb1436f0ff551bebd51450295ce1fc4e36e6f4fc86b5a859232b3b219",
+        "version": "70ed0c7a5d7b2c23350fc1919c7b3534fd53da2bd2147048485f55e162427c82",
         "signature": "f761c91419d0a89422a0004ef1a92929dd4d2d5e5c16758654d8b0467d1998c6",
         "affectsGlobalScope": false
       }
