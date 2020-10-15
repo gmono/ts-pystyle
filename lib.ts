@@ -184,8 +184,12 @@ export function iter<R extends Iterable<any>>(ar:R):ExtendIteratable<IterInnerTy
  * 迭代器的迭代器
  * 
  */
+
+ //压缩单数组参数的
+export function zip<T extends [any,...any[]]>(arraylikes:MapToIteratable<T>):Generator<T,void,void>;
+ //压缩单迭代器参数的
+export function zip<T extends Iterable<any>>(arraylikes:Iterable<T>):Generator<IterInnerType<T>[],void,void>;
 export function zip<T extends any[]>(...arraylikes:MapToIteratable<T>):Generator<T,void,void>;
-export function zip<T extends any[]>(arraylikes:MapToIteratable<T>):Generator<T,void,void>;
 export function *zip(...arraylikes:any){
     // arraylikes是一个迭代器数组 T是迭代器的类型数组 arraylinks[0]是第一个迭代器
     // 其内部类型是T[0]，但如果只有一个元素，那么其内部类型就应该直接是T
@@ -201,12 +205,12 @@ export function *zip(...arraylikes:any){
     if(len(arraylikes)==1){
         arraylikes=arraylikes[0];
     } 
-    //开始
+    //开始 
     //arraylinks可能是一个可迭代对象 不可修改参数本身 
     //itors是一个迭代器数组
     let itors=[];
     for(let a of arraylikes){
-        itors.push(a[Symbol.iterator]);
+        itors.push(a[Symbol.iterator]());
     }
     for(;;){
         //对所有itor取next 如果全部成功则yield 否则返回

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.mapToObj = exports.len = exports.keys = exports.set = exports.zipToDict = exports.dict = exports.list = exports.trustType = exports.assertType = exports.assert = exports.parse = exports.json = exports.float = exports.str = exports.int = exports.insert = exports.max = exports.min = exports.sample = exports.extract = exports.byIdx = exports.sorted = exports.shuffle = exports.zip = exports.print = exports.equal = exports.not = exports.all = exports.any = exports.enumerate = exports.range = exports.select = exports.input = exports.randint = exports.delay = void 0;
+exports.mapToObj = exports.len = exports.keys = exports.set = exports.zipToDict = exports.dict = exports.list = exports.isAsyncIter = exports.isIter = exports.trustType = exports.assertType = exports.assert = exports.parse = exports.json = exports.float = exports.str = exports.int = exports.insert = exports.max = exports.min = exports.sample = exports.extract = exports.byIdx = exports.sorted = exports.shuffle = exports.zip = exports.iter = exports.print = exports.equal = exports.not = exports.all = exports.any = exports.enumerate = exports.range = exports.select = exports.input = exports.randint = exports.delay = void 0;
 const prompts_1 = __importDefault(require("prompts"));
 async function delay(mis) {
     return new Promise((resolve) => {
@@ -111,9 +111,52 @@ function print(...data) {
     console.log(...data);
 }
 exports.print = print;
-//将一个数组列表压缩为一个元组列表
+//代理对象
+class ExtendIteratable {
+    constructor(rawIter) {
+        this.rawIter = rawIter;
+    }
+    [Symbol.iterator]() {
+        return this.rawIter[Symbol.iterator]();
+    }
+    //支持链式调用
+    //全部采用延后求值方法
+    map(cbk) {
+    }
+    forEach(cbk) {
+    }
+    get raw() {
+        return this.rawIter;
+    }
+}
+//构造扩展迭代器
+function iter(ar) {
+    return new ExtendIteratable(ar);
+}
+exports.iter = iter;
 function* zip(...arraylikes) {
-    let itors = arraylikes.map(v => v[Symbol.iterator]());
+    // arraylikes是一个迭代器数组 T是迭代器的类型数组 arraylinks[0]是第一个迭代器
+    // 其内部类型是T[0]，但如果只有一个元素，那么其内部类型就应该直接是T
+    // 其类型应该被转换为与arraylikes本身相同
+    // 如果arraylink中的第一个元素 是一个Iterable<T[R]>的数组，那表示
+    // 直接传过来的一个数组 返回递归调用自己
+    //此处arraylikes可以是一个迭代器数组 即 zip(a,b)
+    //也可以是只有一个元素的迭代器的数组的数组 zip([a,b])
+    //永假 终于让编辑器承认类型
+    if (!trustType(arraylikes))
+        return;
+    if (len(arraylikes) == 0)
+        return;
+    if (len(arraylikes) == 1) {
+        arraylikes = arraylikes[0];
+    }
+    //开始 
+    //arraylinks可能是一个可迭代对象 不可修改参数本身 
+    //itors是一个迭代器数组
+    let itors = [];
+    for (let a of arraylikes) {
+        itors.push(a[Symbol.iterator]());
+    }
     for (;;) {
         //对所有itor取next 如果全部成功则yield 否则返回
         let ress = itors.map(v => v.next());
@@ -261,6 +304,7 @@ function assert(n, msg) {
 }
 exports.assert = assert;
 function assertType(a, b) {
+    //此处有特殊类型的判断 例如 迭代器 的symbol等
     if (typeof b == "string")
         return typeof a == b;
     else if (typeof b == "function")
@@ -274,6 +318,15 @@ function trustType(o) {
     return true;
 }
 exports.trustType = trustType;
+//判断迭代器的
+function isIter(a) {
+    return Symbol.iterator in a;
+}
+exports.isIter = isIter;
+function isAsyncIter(a) {
+    return Symbol.asyncIterator in a;
+}
+exports.isAsyncIter = isAsyncIter;
 //数据容器构造区域
 function list(iter) {
     if (iter == null)
@@ -363,9 +416,6 @@ function mapToObj(map = new Map()) {
             map.set(p, attributes.value);
             return true;
         },
-        enumerate(target) {
-            return list(map.keys());
-        },
         ownKeys(target) {
             return list(map.keys());
         }
@@ -383,3 +433,4 @@ exports.mapToObj = mapToObj;
 //原始列表未list 普通数组即弱类型数组 普通数组有的函数强类型数组一样有
 //实际分开实现
 //
+//# sourceMappingURL=lib.js.map

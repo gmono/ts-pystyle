@@ -452,12 +452,12 @@
         "affectsGlobalScope": false
       },
       "./lib.ts": {
-        "version": "05a4ec4bc7f6824815d0406c4945bff3bab91e92f979e1724f8038ab152b7ff0",
-        "signature": "ea93dd95641ad379fec0e437f74bd99e5be91be47e879a07f457651a092ee907",
+        "version": "f722eb4018bc5ee6c795b7335c0f0b22f8498edf241c22a84881212e808eadb3",
+        "signature": "f1ae8bf7704cbdd3a113b908828230f3c70cc688a8cfda3939f0710f86e15f20",
         "affectsGlobalScope": false
       },
       "./test.ts": {
-        "version": "512b7a27e8c3a4221f63667fc8c1ba04dd14d8ed875ac2f4ff049df16b0aac17",
+        "version": "f35788adb1436f0ff551bebd51450295ce1fc4e36e6f4fc86b5a859232b3b219",
         "signature": "f761c91419d0a89422a0004ef1a92929dd4d2d5e5c16758654d8b0467d1998c6",
         "affectsGlobalScope": false
       }
@@ -470,6 +470,7 @@
         "lib.esnext.d.ts",
         "lib.dom.d.ts"
       ],
+      "sourceMap": true,
       "esModuleInterop": true,
       "forceConsistentCasingInFileNames": true,
       "watch": true,
@@ -873,7 +874,27 @@
       "../../../appdata/roaming/nvm/v14.13.0/node_modules/typescript/lib/lib.esnext.intl.d.ts",
       "../../../appdata/roaming/nvm/v14.13.0/node_modules/typescript/lib/lib.esnext.promise.d.ts",
       "../../../appdata/roaming/nvm/v14.13.0/node_modules/typescript/lib/lib.esnext.string.d.ts",
-      "./lib.ts",
+      [
+        "./lib.ts",
+        [
+          {
+            "file": "./lib.ts",
+            "start": 4575,
+            "length": 31,
+            "messageText": "A function whose declared type is neither 'void' nor 'any' must return a value.",
+            "category": 1,
+            "code": 2355
+          },
+          {
+            "file": "./lib.ts",
+            "start": 4662,
+            "length": 31,
+            "messageText": "A function whose declared type is neither 'void' nor 'any' must return a value.",
+            "category": 1,
+            "code": 2355
+          }
+        ]
+      ],
       "./node_modules/@types/node/assert.d.ts",
       "./node_modules/@types/node/async_hooks.d.ts",
       "./node_modules/@types/node/base.d.ts",
