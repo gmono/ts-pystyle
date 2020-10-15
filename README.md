@@ -13,7 +13,7 @@ call(async ()=>{
     }
 })
 ```
-其中a的类型为[number,number][]    
+  
 # 内容
 * 一些常用函数如 enumerate,range,print,input,select,len,zip
 * 数据类型相关，如 list set map,数据类型抓换 str json int float 等
