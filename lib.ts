@@ -110,12 +110,104 @@ export function print<T extends any[]>(...data:T){
     console.log(...data);
 }
 
+//把一个数组的元素类型加迭代器包装
 export type MapToIteratable<T extends any[]>={[R in keyof T]:Iterable<T[R]>};
 //用作类型引用
 export type ZipType<T extends any[]>=Iterable<T>;
 //将一个数组列表压缩为一个元组列表
-export function *zip<T extends any[]>(...arraylikes:MapToIteratable<T>):Generator<T,void,void>{
-    let itors=arraylikes.map(v=>v[Symbol.iterator]());
+// zip(a,b) a b 是迭代器，zip可接受迭代器数组
+// zip([a,b]) 这里是传递的一个迭代器数组，未来支持 迭代器的迭代器
+
+//合并类型 如果不存在 直接赋值 如果是同名数组 变成|类型 如果是同名对象
+//递归调用得到新类型
+//!合并类型用于JSON对象类型的合并中 需要函数按照对应合并策略进行合并
+type MergeObject<A,B>={[idx in (keyof A|keyof B)]:
+    idx extends keyof A?
+    idx extends keyof B?(
+        //同时
+        MergeType<A[idx],B[idx]>
+    )
+    :(
+        //非同时 即属性名属于一个对象 直接赋值
+        idx extends keyof A?A[idx]:
+        idx extends keyof B?B[idx]:never
+        //如果最后一个都属于 说明出错了
+    ):(
+        //非同时 即属性名属于一个对象 直接赋值
+        idx extends keyof A?A[idx]:
+        idx extends keyof B?B[idx]:never
+        //如果最后一个都属于 说明出错了
+    )};
+//合并类型 如果是同一个类型 返回 如果是数组类型返回合并后
+//以后支持 如果是迭代器 生成器 等常见模板类型 都进行合并
+//但由于不支持通用泛型表示 无法覆盖自定义泛型
+//对于自定义泛型 只能通过 & 符号来自动合并
+//对象不适用& 来自动合并 因为& 无法自动处理当两个属性冲突时的情况
+//例如无法把两个不同的数组合并为一个或类型数组,如果进行 元素结果为never
+//不能提供更多类似这种特殊类型的合并处理操作
+//! 这里做如下假设： 迭代器合并是进行混合或拼接concat，而非取舍
+//! 一切对象类型都进行合并
+//! 原始类型进行或操作
+type MergeType<A,B>=A extends B? A:
+                    
+                    A extends Array<infer AT>?B extends Array<infer BT>? Array<AT|BT>:MergeObject<A,B>:MergeObject<A,B>;
+
+type CBKType<T>=[value:T,index:number];
+type IterInnerType<T>=T extends Iterable<infer S>? S:never;
+//代理对象
+class ExtendIteratable<T,Raw> implements Iterable<T>{
+    constructor(protected rawIter:Raw){}
+    [Symbol.iterator](): Iterator<T, any, undefined> {
+        return this.rawIter[Symbol.iterator]();
+    }
+    //支持链式调用
+    //全部采用延后求值方法
+    map<S>(cbk:(...args:CBKType<T>)=>S):ExtendIteratable<S,Iterable<S>>{
+
+    }
+    forEach(cbk:(...args:CBKType<T>)=>void):ExtendIteratable<T,Iterable<T>>{
+
+    }
+    get raw(){
+        return this.rawIter;
+    }
+}
+//构造扩展迭代器
+export function iter<R extends Iterable<any>>(ar:R):ExtendIteratable<IterInnerType<R>,R>
+{
+    return  new ExtendIteratable<IterInnerType<R>,R>(ar);
+}
+//装饰器 可以把任何返回的可迭代对象 转换为扩展迭代器对象
+/**
+ * 可 zip(a,b) zip([a,b]) 其中ab为迭代器
+ * 同时ab可不直接给出，允许使用迭代器如zip(zip([a,b]))其中第一个zip得到的是一个
+ * 迭代器的迭代器
+ * 
+ */
+export function zip<T extends any[]>(...arraylikes:MapToIteratable<T>):Generator<T,void,void>;
+export function zip<T extends any[]>(arraylikes:MapToIteratable<T>):Generator<T,void,void>;
+export function *zip(...arraylikes:any){
+    // arraylikes是一个迭代器数组 T是迭代器的类型数组 arraylinks[0]是第一个迭代器
+    // 其内部类型是T[0]，但如果只有一个元素，那么其内部类型就应该直接是T
+    // 其类型应该被转换为与arraylikes本身相同
+    // 如果arraylink中的第一个元素 是一个Iterable<T[R]>的数组，那表示
+    // 直接传过来的一个数组 返回递归调用自己
+
+    //此处arraylikes可以是一个迭代器数组 即 zip(a,b)
+    //也可以是只有一个元素的迭代器的数组的数组 zip([a,b])
+    //永假 终于让编辑器承认类型
+    if(!trustType<any[]>(arraylikes)) return;
+    if(len(arraylikes)==0) return;
+    if(len(arraylikes)==1){
+        arraylikes=arraylikes[0];
+    } 
+    //开始
+    //arraylinks可能是一个可迭代对象 不可修改参数本身 
+    //itors是一个迭代器数组
+    let itors=[];
+    for(let a of arraylikes){
+        itors.push(a[Symbol.iterator]);
+    }
     for(;;){
         //对所有itor取next 如果全部成功则yield 否则返回
         let ress=itors.map(v=>v.next());
@@ -125,7 +217,7 @@ export function *zip<T extends any[]>(...arraylikes:MapToIteratable<T>):Generato
             //返回
             return undefined;
         }
-        else yield ress.map(v=>v.value) as T;
+        else yield ress.map(v=>v.value);
     }
 }
 
@@ -250,9 +342,19 @@ export function assert(n:boolean,msg:string){
     
 }
 
-export type  TypeList= RawTypeList| "object" | "function";
-export type RawTypeList="string" | "number" | "bigint" | "boolean" | "symbol" | "undefined";
-export type TypeMap<name extends TypeList>=name extends "string"? string:
+export type  TypeNameList= RawTypeNameList| "object" | "function";
+export type RawTypeNameList="string" | "number" | "bigint" | "boolean" | "symbol" | "undefined";
+export type RawTypeList=string | number | bigint | boolean | symbol | undefined;
+export type  TypeList= RawTypeNameList| object | Function;
+export type TypeMap<tp extends TypeList>=tp extends string? "string":
+                    tp extends number? "number":
+                    tp extends bigint? "bigint":
+                    tp extends boolean? "boolean":
+                    tp extends symbol? "symbol":
+                    tp extends Function? "function":
+                    tp extends undefined? "undefined":
+                    tp extends object? "object":never;
+export type TypeNameMap<name extends TypeNameList>=name extends "string"? string:
                     name extends "number"? number:
                     name extends "bigint"? bigint:
                     name extends "boolean"? boolean:
@@ -264,9 +366,10 @@ export type ClassType=new(...args)=>any;
 //此为类型判断函数系列 可用于类型推导 
 //用法: assertType(a,b) b为string时 判断原生类型 b为class时判断实例类型
 //! 不可用于判断接口类型和类型别名type 
-export function assertType<T extends TypeList>(obj:any,typename:T):obj is TypeMap<T>;
+export function assertType<T extends TypeNameList>(obj:any,typename:T):obj is TypeNameMap<T>;
 export function assertType<T extends object,S extends ClassType>(obj:T,cls:S):obj is InstanceType<S>;
 export function assertType(a,b){
+    //此处有特殊类型的判断 例如 迭代器 的symbol等
     if(typeof b=="string") return typeof a==b;
     else if(typeof b=="function")  return a instanceof b;
 }
@@ -276,7 +379,13 @@ export function assertType(a,b){
 export function trustType<T>(o:any):o is T{
     return true;
 }
-
+//判断迭代器的
+export function isIter<T extends any>(a:object):a is Iterable<T>{
+    return Symbol.iterator in a;
+}
+export function isAsyncIter<T extends any>(a:object):a is AsyncIterable<T>{
+    return Symbol.asyncIterator in a;
+}
 //数据容器构造区域
 
 export function list<T>(iter?:Iterable<T>):Array<T>{
@@ -364,10 +473,6 @@ export function mapToObj(map:Map<any,any>=new Map()){
         {
             map.set(p,attributes.value);
             return true;
-        },
-        enumerate (target): any[]
-        {
-            return list(map.keys());
         },
         ownKeys (target): any[]
         {
