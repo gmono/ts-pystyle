@@ -163,26 +163,73 @@ class ExtendIteratable<T,Raw> implements Iterable<T>{
     //支持链式调用
     //全部采用延后求值方法
     map<S>(cbk:(...args:CBKType<T>)=>S):ExtendIteratable<S,Iterable<S>>{
-
+        //延迟调用
+        let _this=this;
+        function *inner(){
+            let i=0;
+            for(let a of _this){
+                yield cbk(a,i);
+                i++;
+            }
+        }
+        return new ExtendIteratable<S,Iterable<S>>(inner());
     }
-    forEach(cbk:(...args:CBKType<T>)=>void):ExtendIteratable<T,Iterable<T>>{
-
+    forEach(cbk:(...args:CBKType<T>)=>void):ExtendIteratable<T,Raw>{
+        let i=0;
+        for(let a of this){
+            cbk(a,i);
+            i++;
+        }
+        return this;
     }
     get raw(){
         return this.rawIter;
     }
+    concat<R>(b:ExtendIteratable<IterInnerType<R>,R>):ExtendIteratable<T|IterInnerType<R>,Iterable<T|IterInnerType<R>>>{
+        //延迟调用
+        let _this=this;
+        function *inner(){
+            for(let a of _this){
+                yield a;
+            }
+            for(let a of b){
+                yield a;
+            }
+        }
+        return new ExtendIteratable<T|IterInnerType<R>,Iterable<T|IterInnerType<R>>>(inner());
+    }
+    // exchange():(T extends [infer one,infer two]? ExtendIteratable<[two,one],Iterable<[two,one]>>:never){
+    //     //如果T是一个[a,b]类型 可变为[b,a]类型
+
+    //     let _this=this;
+    //     function *inner(){
+    //         for(let ar of _this){
+    //             if(trustType<object>(ar))
+    //             if(assertType(ar,Array)){
+    //                 if(len(ar)==2){
+    //                     yield [ar[1],ar[0]];
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     return new ExtendIteratable<any,Iterable<any>>(inner() as any) as any;
+    // }
 }
 //构造扩展迭代器
+export type ArInner<T>=T extends Array<infer P> ?P:never;
+// export function iter<R extends [Iterable<any>,Iterable<any>]>(ar:R):ExtendIteratable<[IterInnerType<R[0]>,IterInnerType<R[1]>],R>;
+export function iter<R extends Iterable<any>>(ar:R):ExtendIteratable<IterInnerType<R>,R>;
 export function iter<R extends Iterable<any>>(ar:R):ExtendIteratable<IterInnerType<R>,R>
 {
     return  new ExtendIteratable<IterInnerType<R>,R>(ar);
 }
-//装饰器 可以把任何返回的可迭代对象 转换为扩展迭代器对象
+
+// iter([[1,2],[2,3]]).exchange()
 /**
  * 可 zip(a,b) zip([a,b]) 其中ab为迭代器
  * 同时ab可不直接给出，允许使用迭代器如zip(zip([a,b]))其中第一个zip得到的是一个
  * 迭代器的迭代器
- * 
+ * zip可用来对iterable进行截断，对无限迭代器可用作限定长度
  */
 
  //压缩单数组参数的
@@ -190,6 +237,7 @@ export function zip<T extends [any,...any[]]>(arraylikes:MapToIteratable<T>):Gen
  //压缩单迭代器参数的
 export function zip<T extends Iterable<any>>(arraylikes:Iterable<T>):Generator<IterInnerType<T>[],void,void>;
 export function zip<T extends any[]>(...arraylikes:MapToIteratable<T>):Generator<T,void,void>;
+
 export function *zip(...arraylikes:any){
     // arraylikes是一个迭代器数组 T是迭代器的类型数组 arraylinks[0]是第一个迭代器
     // 其内部类型是T[0]，但如果只有一个元素，那么其内部类型就应该直接是T
@@ -225,6 +273,40 @@ export function *zip(...arraylikes:any){
     }
 }
 
+
+//笛卡尔积 惰性求值
+function *_cartesian<A extends Iterable<any>,B extends Iterable<any>>(a:A,b:B)
+:Generator<[IterInnerType<A>,IterInnerType<B>], void, unknown>
+{
+    //b应当有穷尽 否则 将无限循环
+    //或迭代必须自动结束 否则无限循环
+    let ar=[] as IterInnerType<B>[];
+    let first=true;
+    for(let t of a){
+        let s=first? b:ar;
+        for(let tt of s){
+            yield [t,tt];
+            first&&ar.push(tt)
+        }
+        first=false;
+    }
+}
+
+type MapToInner<ar>=ar extends [infer a,...infer b]? (a extends Iterable<infer n>?[n,...MapToInner<b>]:"never"):[];
+type a=MapToInner<[[number],[string]]>
+export function *cartesian<ar extends Iterable<any>[]>(...args:ar):Generator<MapToInner<ar>, void, unknown>{
+    if(len(args)==2) {
+            yield * _cartesian(args[0],args[1]) as any;
+    }
+    else{
+        //递归
+        for(let [a,b] of _cartesian(args[0],cartesian(...args.slice(1)))){
+            //a 为元素 b为元素数组
+            yield [a,...b] as any;
+        }
+    }
+}
+cartesian([],[],[])
 //两次zip还原
 // let a=list(zip(...list(zip(...[[1,2,3],[2,3,4]]))))
 
@@ -377,6 +459,7 @@ export function assertType(a,b){
     if(typeof b=="string") return typeof a==b;
     else if(typeof b=="function")  return a instanceof b;
 }
+assertType([],Array);
 //!用于判断类型别名或接口，由于无法直接判断，这里直接“取信”即认为是如此 用于类型推导
 //此函数让编辑器相信某对象是某个类型
 //此函数对any使用时可实现自动类型提示转换 类似 as 关键字

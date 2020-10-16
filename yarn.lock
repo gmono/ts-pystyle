@@ -30,3 +30,7 @@ prompts@^2.3.2:
 sisteransi@^1.0.4:
   version "1.0.5"
   resolved "https://registry.npmjs.org/sisteransi/-/sisteransi-1.0.5.tgz#134d681297756437cc05ca01370d3a7a571075ed"
+
+ts-metacode@^0.5.1:
+  version "0.5.1"
+  resolved "https://registry.npmjs.org/ts-metacode/-/ts-metacode-0.5.1.tgz#41873aa0919ee577b6a2150ad6ee4d8498eab0c2"

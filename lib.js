@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.call = exports.mapToObj = exports.len = exports.keys = exports.set = exports.zipToDict = exports.dict = exports.list = exports.isAsyncIter = exports.isIter = exports.trustType = exports.assertType = exports.assert = exports.parse = exports.json = exports.float = exports.str = exports.int = exports.insert = exports.max = exports.min = exports.sample = exports.extract = exports.byIdx = exports.sorted = exports.shuffle = exports.zip = exports.iter = exports.print = exports.equal = exports.not = exports.all = exports.any = exports.enumerate = exports.range = exports.select = exports.input = exports.randint = exports.delay = void 0;
+exports.call = exports.mapToObj = exports.len = exports.keys = exports.set = exports.zipToDict = exports.dict = exports.list = exports.isAsyncIter = exports.isIter = exports.trustType = exports.assertType = exports.assert = exports.parse = exports.json = exports.float = exports.str = exports.int = exports.insert = exports.max = exports.min = exports.sample = exports.extract = exports.byIdx = exports.sorted = exports.shuffle = exports.cartesian = exports.zip = exports.iter = exports.print = exports.equal = exports.not = exports.all = exports.any = exports.enumerate = exports.range = exports.select = exports.input = exports.randint = exports.delay = void 0;
 const prompts_1 = __importDefault(require("prompts"));
 async function delay(mis) {
     return new Promise((resolve) => {
@@ -122,14 +122,42 @@ class ExtendIteratable {
     //支持链式调用
     //全部采用延后求值方法
     map(cbk) {
+        //延迟调用
+        let _this = this;
+        function* inner() {
+            let i = 0;
+            for (let a of _this) {
+                yield cbk(a, i);
+                i++;
+            }
+        }
+        return new ExtendIteratable(inner());
     }
     forEach(cbk) {
+        let i = 0;
+        for (let a of this) {
+            cbk(a, i);
+            i++;
+        }
+        return this;
     }
     get raw() {
         return this.rawIter;
     }
+    concat(b) {
+        //延迟调用
+        let _this = this;
+        function* inner() {
+            for (let a of _this) {
+                yield a;
+            }
+            for (let a of b) {
+                yield a;
+            }
+        }
+        return new ExtendIteratable(inner());
+    }
 }
-//构造扩展迭代器
 function iter(ar) {
     return new ExtendIteratable(ar);
 }
@@ -171,6 +199,35 @@ function* zip(...arraylikes) {
     }
 }
 exports.zip = zip;
+//笛卡尔积 惰性求值
+function* _cartesian(a, b) {
+    //b应当有穷尽 否则 将无限循环
+    //或迭代必须自动结束 否则无限循环
+    let ar = [];
+    let first = true;
+    for (let t of a) {
+        let s = first ? b : ar;
+        for (let tt of s) {
+            yield [t, tt];
+            first && ar.push(tt);
+        }
+        first = false;
+    }
+}
+function* cartesian(...args) {
+    if (len(args) == 2) {
+        yield* _cartesian(args[0], args[1]);
+    }
+    else {
+        //递归
+        for (let [a, b] of _cartesian(args[0], cartesian(...args.slice(1)))) {
+            //a 为元素 b为元素数组
+            yield [a, ...b];
+        }
+    }
+}
+exports.cartesian = cartesian;
+cartesian([], [], []);
 //两次zip还原
 // let a=list(zip(...list(zip(...[[1,2,3],[2,3,4]]))))
 //基本操作
@@ -311,6 +368,7 @@ function assertType(a, b) {
         return a instanceof b;
 }
 exports.assertType = assertType;
+assertType([], Array);
 //!用于判断类型别名或接口，由于无法直接判断，这里直接“取信”即认为是如此 用于类型推导
 //此函数让编辑器相信某对象是某个类型
 //此函数对any使用时可实现自动类型提示转换 类似 as 关键字

@@ -452,12 +452,12 @@
         "affectsGlobalScope": false
       },
       "./lib.ts": {
-        "version": "fb0d0a0daf292220c2d05cb3fc9a3d836db481dac0a56870c2d62d03aeaa3c52",
-        "signature": "efcde41d0a64dd565eb0cd98d985bc2ab1a7ed05275c676cee10b6a4eb1410e0",
+        "version": "7d8e5ee042bfeec7d262738ea260a672ccd1efacdceee874f6b9393aff4b7066",
+        "signature": "da2233d7fc65b4c28c4207337fdfbe2daaec50b642f012ae206f44fb47c92105",
         "affectsGlobalScope": false
       },
       "./test.ts": {
-        "version": "70ed0c7a5d7b2c23350fc1919c7b3534fd53da2bd2147048485f55e162427c82",
+        "version": "bf6c919f6f2e3560229aae2d24c93989e1a95a032d4d14e60df827ce60950230",
         "signature": "f761c91419d0a89422a0004ef1a92929dd4d2d5e5c16758654d8b0467d1998c6",
         "affectsGlobalScope": false
       }
@@ -472,7 +472,10 @@
       ],
       "sourceMap": true,
       "esModuleInterop": true,
+      "experimentalDecorators": true,
+      "emitDecoratorMetadata": true,
       "forceConsistentCasingInFileNames": true,
+      "resolveJsonModule": true,
       "watch": true,
       "configFilePath": "./tsconfig.json"
     },
@@ -879,19 +882,35 @@
         [
           {
             "file": "./lib.ts",
-            "start": 4575,
-            "length": 31,
-            "messageText": "A function whose declared type is neither 'void' nor 'any' must return a value.",
+            "start": 8601,
+            "length": 10,
+            "messageText": "Type alias 'MapToInner' circularly references itself.",
             "category": 1,
-            "code": 2355
+            "code": 2456
           },
           {
             "file": "./lib.ts",
-            "start": 4662,
-            "length": 31,
-            "messageText": "A function whose declared type is neither 'void' nor 'any' must return a value.",
+            "start": 8684,
+            "length": 13,
+            "messageText": "Type 'MapToInner' is not generic.",
             "category": 1,
-            "code": 2355
+            "code": 2315
+          },
+          {
+            "file": "./lib.ts",
+            "start": 8720,
+            "length": 31,
+            "messageText": "Type 'MapToInner' is not generic.",
+            "category": 1,
+            "code": 2315
+          },
+          {
+            "file": "./lib.ts",
+            "start": 8830,
+            "length": 14,
+            "messageText": "Type 'MapToInner' is not generic.",
+            "category": 1,
+            "code": 2315
           }
         ]
       ],

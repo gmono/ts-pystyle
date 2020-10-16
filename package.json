@@ -1,6 +1,6 @@
 {
   "name": "ts-pystyle",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "typescript in Python style",
   "main": "lib.js",
   "scripts": {
@@ -26,6 +26,7 @@
   "dependencies": {
     "@types/prompts": "^2.0.9",
     "denque": "^1.4.1",
-    "prompts": "^2.3.2"
+    "prompts": "^2.3.2",
+    "ts-metacode": "^0.5.1"
   }
 }
