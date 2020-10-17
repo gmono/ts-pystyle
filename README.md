@@ -1,5 +1,65 @@
+
+# 中文说明在下方
+
+# Description
+Implementing a Python style turn in Typescript
+**This package is large, mainly because the main reason for including the debugging with the sourcemap and source files, packaging will not be packed into the actual source file size 13.6KB**
+```ts
+import { iter, all, any, call, cartesian, delay, enumerate, input, int, list, print, range, zip } from '. /lib';
+
+//support cutoff
+let p=iter(zip([1,2,3],range(1000)])))
+p.map(v=>v[0]*2).forEach(v=>print(v));
+iter(range(10)).map(v=>v*2).forEach(v=>print(v)).
+
+
+
+call(async ()=>{
+    let a=zip(zip([1,2,3],[2,3,4])))
+    let lst=list(a)
+    for(let [i,ii,c] of cartesian(range(10),range(10),range(3),range(3))){
+      print([i,ii,c])
+    }
+    for(;;){
+      await delay(1000);
+      let test=int(await input("Enter number:")))
+      for(let [a,b] of enumerate(zip(zip(range(test),range(test,test*2)))) ){
+        print(a,b)
+      }
+    }
+
+})
+
+```
+  
+# Content
+* Some common functions like enumerate,range,print,input,select,len,zip
+* data type related, such as list set map,data type capture str json int float etc.
+* Some general convenience functions such as: shuffle randint 
+* Special functions.
+  * delay function, asynchronous wait function via callback, combined with async await for pseudo-multi-threading.
+  * cartesian, a Cartesian product that can be used to omit multiple loops, supports multiple iterators, and can be combined with zip for many effects
+* Set operation functions: any all, etc.
+* Type judgment function:
+  1. assert, exception thrown on false
+  2. assertType supports the judgment of types, the types that can be judged are Raw types, i.e., native types and Class types, type aliases, generic interfaces, etc. can not be judged.
+* Extension of the Iterable class to allow iterator wrapping without losing types, support for chain calls, use of iter functions to get
+# Platform requirements
+Test platform.
+* node v14.13.0
+* typescript 4.0.3
+Other platforms, please test on your own.
+# Next steps
+1. Adding a large number of type determination functions
+2. Rich extension iterator, including the introduction of external packages
+
+
+
+
+
 # 说明
 在Typescript中实现Python风格的变成，如
+**本包体积较大，主要原因为包括了调试用的sourcemap和源文件，打包时不会打包进去，实际源文件大小13.6KB**
 ```ts
 import { iter, all, any, call, cartesian, delay, enumerate, input, int, list, print, range, zip } from './lib';
 
