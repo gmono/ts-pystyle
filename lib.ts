@@ -153,39 +153,140 @@ type MergeType<A,B>=A extends B? A:
                     A extends Array<infer AT>?B extends Array<infer BT>? Array<AT|BT>:MergeObject<A,B>:MergeObject<A,B>;
 
 type CBKType<T>=[value:T,index:number];
-type IterInnerType<T>=T extends Iterable<infer S>? S:never;
+//按iterable得到内类型
+type IterInnerNorm<T>=T extends Iterable<infer S>? S:T extends AsyncIterable<infer SS>? Promise<SS>:never;
+//这里假设普通iter 中的内容会被当做常量Promise返回
+//这里当iter被转换为async时用于获取其内部类型
+type IterInnerAsync<T>=T extends Iterable<infer S>? Promise<S>:T extends AsyncIterable<infer SS>? SS:never;
 //代理对象
-class ExtendIteratable<T,Raw> implements Iterable<T>{
+type PromiseInner<T>=T extends Promise<infer S>? S:T;
+// type t=typeof a extends Iterable<number>? true:false;
+
+//可以支持 异步迭代器 异步迭代器生成promise
+export function error(msg:string=""){
+    throw new Error(msg);
+}
+
+//定义通用类型
+type Iter<T>=Iterable<T>|AsyncIterable<T>;
+//无论是异步还是同步iter 都返回其最终元素的类型
+type InnerType<Raw>=PromiseInner<IterInnerNorm<Raw>>;
+//通过元素类型确定iter类型
+type IterByInner<S>=(S extends Promise<any>? AsyncIterable<PromiseInner<S>>:Iterable<S>);
+type TransToSync<T>=T extends AsyncIterable<infer P>? Iterable<P>:T;
+/**
+ * 可以包装异步和同步迭代器 其中异步迭代器是返回异步 itor的对象
+ * 这个对象的next函数可以返回一个promise  求得promise后和普通itor一样
+ * asyncitor的next返回的是一个Promise  itor返回的是一个itor result
+ * 此promise then后就得到了一个和itor一样的itor result
+ * ! 注意此处问题 由于asynciter和iter并不能互相转化 这里只能把 iter转化为asynciter
+ * ! 而不能把asynciter转化为iter 此处iterator返回的应该是null,即保证同步循环不能对异步迭代器使用
+ */
+class ExtendIteratable<T,Raw> implements Iterable<IterInnerNorm<Raw>>,AsyncIterable<IterInnerAsync<Raw>>{
     constructor(protected rawIter:Raw){}
-    [Symbol.iterator](): Iterator<T, any, undefined> {
+    [Symbol.asyncIterator](): AsyncIterator<IterInnerAsync<Raw>, any, undefined> {
+        if(isAsyncIter(this.raw)) return this.rawIter[Symbol.asyncIterator]();
+        return this.map(v=>Promise.resolve(v))[Symbol.iterator]() as any;
+    }
+    //如果是async 返回promise<T>
+    [Symbol.iterator](): Iterator<IterInnerNorm<Raw>, any, undefined> {
+        if(isAsyncIter(this.raw)) return this.rawIter[Symbol.asyncIterator]();
         return this.rawIter[Symbol.iterator]();
     }
+    //用于在包装
     //支持链式调用
     //全部采用延后求值方法
-    map<S>(cbk:(...args:CBKType<T>)=>S):ExtendIteratable<S,Iterable<S>>{
+    map<S>(cbk:(...args:CBKType<PromiseInner<IterInnerNorm<Raw>>>)=>S):ExtendIteratable<PromiseInner<S>,IterByInner<S>>{
         //延迟调用
         let _this=this;
         function *inner(){
             let i=0;
             for(let a of _this){
-                yield cbk(a,i);
+                yield cbk(a as any,i);
                 i++;
             }
         }
-        return new ExtendIteratable<S,Iterable<S>>(inner());
+        //async 处理 async iter map后还是async iter
+        async function *ainner(){
+            let i=0;
+            for await(let a of _this){
+                yield await cbk(a as any,i);
+                i++;
+            }
+        }
+        if(isAsyncIter(this.raw)){
+            return new ExtendIteratable(ainner() as any);
+        }
+        return new ExtendIteratable(inner() as any);
     }
-    forEach(cbk:(...args:CBKType<T>)=>void):ExtendIteratable<T,Raw>{
+    /**
+     * ! 此函数对异步迭代器调用时会遍历其中元素来得到具体长度，以便转换为同步
+     * 把异步迭代器转换为同步迭代器
+     * 其实是伪的同步迭代器
+     * 由于不知道什么时候结束，不能把异步迭代器当同步迭代器迭代而仅仅是把元素换为Promise<T>
+     * 实际上其元素类型并非promise T 而是其返回的itor result 需要await之后才能知道是否结束
+     * ? 既然sync().then(v) 可以 那么把v变成某种单元素接收器替代接受iter 也可以
+     */
+    async sync():Promise<ExtendIteratable<T,(Raw extends AsyncIterable<any>? T[]:Raw)>>{
+        //对于async的iter 对转换为普通iter
+        //使用异步循环
+        if(isIter(this.raw)){
+            //如果是普通迭代器，直接返回
+            return this as any;
+        }
+        else if(isAsyncIter(this.raw)){
+            //收集所有result的promise，通过对promise使用then 转换promise为值的promise
+            //然后返回值的promise
+            //由于不知道何时结束，这个无法实施，只能一次性收集所有的元素 await后返回返回数组
+            let ar=[]
+            for await(let a of this){
+                ar.push(a);
+            }
+            return iter(ar) as any;
+        }
+        error("内部错误");
+    }
+    /**
+     * 实际遍历，得到数组
+     */
+    collect():T[]{
+        //对于异步迭代器而言 言语不await就无法知道是否结束 
+        //此函数必然要变为异步函数，因此这里设定，此函数不能在异步迭代器上调用
+        //异步迭代器必须先调用sync函数并等待其结束
+        //对于raw本来就是数组的来说，直接返回其数组
+        if(isAsyncIter(this.raw)) error("不能在异步迭代器上调用collect");
+        else if(this.raw instanceof Array){
+            return this.raw;
+        }else{
+            //收集
+            let ar=[]
+            for(let a of this.raw as any){
+                ar.push(a)
+            }
+            return ar;
+        }
+    }
+    //async 迭代器返回的直接就是promise
+    //此函数调用后真正开始循环求值，在此之前，其他函数调用都不会直接执行
+    forEach(cbk:(Raw extends Iterable<any>?(...args:CBKType<IterInnerNorm<Raw>>)=>any:never)):(Raw extends Iterable<any>? this:never){
+        //延迟调用
+        assert(!isAsyncIter(this.raw),"错误，不能对AsyncIterable直接调用forEach,应使用sync函数");
+        //使用sync+forEach 或 map+sync 来模拟原始的foreach
+        let _this=this;
         let i=0;
         for(let a of this){
+            //必须是同步的
             cbk(a,i);
             i++;
         }
-        return this;
+        return this as any;
     }
     get raw(){
         return this.rawIter;
     }
-    concat<R>(b:ExtendIteratable<IterInnerType<R>,R>):ExtendIteratable<T|IterInnerType<R>,Iterable<T|IterInnerType<R>>>{
+    //连接两个迭代器
+    //! 未完成 还没有处理async的情况
+    concat<R>(b:ExtendIteratable<IterInnerNorm<R>,R>):ExtendIteratable<T|IterInnerNorm<R>,Iterable<T|IterInnerNorm<R>>>{
         //延迟调用
         let _this=this;
         function *inner(){
@@ -196,7 +297,7 @@ class ExtendIteratable<T,Raw> implements Iterable<T>{
                 yield a;
             }
         }
-        return new ExtendIteratable<T|IterInnerType<R>,Iterable<T|IterInnerType<R>>>(inner());
+        return new ExtendIteratable<T|IterInnerNorm<R>,Iterable<T|IterInnerNorm<R>>>(inner() as any);
     }
     // exchange():(T extends [infer one,infer two]? ExtendIteratable<[two,one],Iterable<[two,one]>>:never){
     //     //如果T是一个[a,b]类型 可变为[b,a]类型
@@ -218,13 +319,17 @@ class ExtendIteratable<T,Raw> implements Iterable<T>{
 //构造扩展迭代器
 export type ArInner<T>=T extends Array<infer P> ?P:never;
 // export function iter<R extends [Iterable<any>,Iterable<any>]>(ar:R):ExtendIteratable<[IterInnerType<R[0]>,IterInnerType<R[1]>],R>;
-export function iter<R extends Iterable<any>>(ar:R):ExtendIteratable<IterInnerType<R>,R>;
-export function iter<R extends Iterable<any>>(ar:R):ExtendIteratable<IterInnerType<R>,R>
+export function iter<R extends Iter<any>>(ar:R):ExtendIteratable<IterInnerNorm<R>,R>;
+export function iter<R extends Iter<any>>(ar:R):ExtendIteratable<IterInnerNorm<R>,R>
 {
-    return  new ExtendIteratable<IterInnerType<R>,R>(ar);
+    return  new ExtendIteratable<IterInnerNorm<R>,R>(ar);
 }
 
-// iter([[1,2],[2,3]]).exchange()
+async function * test(){
+    yield 1;
+}
+
+
 /**
  * 可 zip(a,b) zip([a,b]) 其中ab为迭代器
  * 同时ab可不直接给出，允许使用迭代器如zip(zip([a,b]))其中第一个zip得到的是一个
@@ -235,7 +340,7 @@ export function iter<R extends Iterable<any>>(ar:R):ExtendIteratable<IterInnerTy
  //压缩单数组参数的
 export function zip<T extends [any,...any[]]>(arraylikes:MapToIteratable<T>):Generator<T,void,void>;
  //压缩单迭代器参数的
-export function zip<T extends Iterable<any>>(arraylikes:Iterable<T>):Generator<IterInnerType<T>[],void,void>;
+export function zip<T extends Iterable<any>>(arraylikes:Iterable<T>):Generator<IterInnerNorm<T>[],void,void>;
 export function zip<T extends any[]>(...arraylikes:MapToIteratable<T>):Generator<T,void,void>;
 
 export function *zip(...arraylikes:any){
@@ -276,11 +381,11 @@ export function *zip(...arraylikes:any){
 
 //笛卡尔积 惰性求值
 function *_cartesian<A extends Iterable<any>,B extends Iterable<any>>(a:A,b:B)
-:Generator<[IterInnerType<A>,IterInnerType<B>], void, unknown>
+:Generator<[IterInnerNorm<A>,IterInnerNorm<B>], void, unknown>
 {
     //b应当有穷尽 否则 将无限循环
     //或迭代必须自动结束 否则无限循环
-    let ar=[] as IterInnerType<B>[];
+    let ar=[] as IterInnerNorm<B>[];
     let first=true;
     for(let t of a){
         let s=first? b:ar;
@@ -467,11 +572,11 @@ export function trustType<T>(o:any):o is T{
     return true;
 }
 //判断迭代器的
-export function isIter<T extends any>(a:object):a is Iterable<T>{
+export function isIter<T extends any>(a:any):a is Iterable<T>{
     return Symbol.iterator in a;
 }
-export function isAsyncIter<T extends any>(a:object):a is AsyncIterable<T>{
-    return Symbol.asyncIterator in a;
+export function isAsyncIter<T extends any>(a:any):a is AsyncIterable<T>{
+    return Symbol.asyncIterator in a&&!(Symbol.iterator in a);
 }
 //数据容器构造区域
 
@@ -647,3 +752,13 @@ type GenericTypedArray=Uint8Array|
 //原始列表未list 普通数组即弱类型数组 普通数组有的函数强类型数组一样有
 //实际分开实现
 //
+
+
+//! 数据相关 文件读写
+
+import * as fs from "fs/promises"
+export const open=fs.open;
+export async function close(fhand:Promise<fs.FileHandle>){
+    (await fhand).close();
+}
+//把file转换为AsyncIterable 

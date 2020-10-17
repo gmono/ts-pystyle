@@ -452,12 +452,12 @@
         "affectsGlobalScope": false
       },
       "./lib.ts": {
-        "version": "7d8e5ee042bfeec7d262738ea260a672ccd1efacdceee874f6b9393aff4b7066",
-        "signature": "da2233d7fc65b4c28c4207337fdfbe2daaec50b642f012ae206f44fb47c92105",
+        "version": "79f9efb2857a4119304d65f0b978333eea6d858e991f4bace44e0b699db9531c",
+        "signature": "ac3fcd84a9e64d340df76181d3fbfc3a6180c4b4138b5a5260563c760b91070a",
         "affectsGlobalScope": false
       },
       "./test.ts": {
-        "version": "bf6c919f6f2e3560229aae2d24c93989e1a95a032d4d14e60df827ce60950230",
+        "version": "dfe513eb3a0cb5a1611a327fbaced7f7b1d772e7aa62b048a23deecd93264350",
         "signature": "f761c91419d0a89422a0004ef1a92929dd4d2d5e5c16758654d8b0467d1998c6",
         "affectsGlobalScope": false
       }
@@ -481,6 +481,7 @@
     },
     "referencedMap": {
       "./lib.ts": [
+        "./node_modules/@types/node/fs/promises.d.ts",
         "./node_modules/@types/prompts/index.d.ts",
         "./node_modules/denque/index.d.ts"
       ],
@@ -661,6 +662,7 @@
     },
     "exportedModulesMap": {
       "./lib.ts": [
+        "./node_modules/@types/node/fs/promises.d.ts",
         "./node_modules/@types/prompts/index.d.ts"
       ],
       "./node_modules/@types/node/base.d.ts": [
@@ -882,7 +884,7 @@
         [
           {
             "file": "./lib.ts",
-            "start": 8601,
+            "start": 12367,
             "length": 10,
             "messageText": "Type alias 'MapToInner' circularly references itself.",
             "category": 1,
@@ -890,7 +892,7 @@
           },
           {
             "file": "./lib.ts",
-            "start": 8684,
+            "start": 12450,
             "length": 13,
             "messageText": "Type 'MapToInner' is not generic.",
             "category": 1,
@@ -898,7 +900,7 @@
           },
           {
             "file": "./lib.ts",
-            "start": 8720,
+            "start": 12486,
             "length": 31,
             "messageText": "Type 'MapToInner' is not generic.",
             "category": 1,
@@ -906,7 +908,7 @@
           },
           {
             "file": "./lib.ts",
-            "start": 8830,
+            "start": 12596,
             "length": 14,
             "messageText": "Type 'MapToInner' is not generic.",
             "category": 1,

@@ -1,6 +1,6 @@
 {
   "name": "ts-pystyle",
-  "version": "0.8.0-maintain2",
+  "version": "1.0-alpha1",
   "description": "typescript in Python style",
   "main": "lib.js",
   "scripts": {

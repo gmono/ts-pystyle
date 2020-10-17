@@ -1,9 +1,28 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.call = exports.mapToObj = exports.len = exports.keys = exports.set = exports.zipToDict = exports.dict = exports.list = exports.isAsyncIter = exports.isIter = exports.trustType = exports.assertType = exports.assert = exports.parse = exports.json = exports.float = exports.str = exports.int = exports.insert = exports.max = exports.min = exports.sample = exports.extract = exports.byIdx = exports.sorted = exports.shuffle = exports.cartesian = exports.zip = exports.iter = exports.print = exports.equal = exports.not = exports.all = exports.any = exports.enumerate = exports.range = exports.select = exports.input = exports.randint = exports.delay = void 0;
+exports.close = exports.open = exports.call = exports.mapToObj = exports.len = exports.keys = exports.set = exports.zipToDict = exports.dict = exports.list = exports.isAsyncIter = exports.isIter = exports.trustType = exports.assertType = exports.assert = exports.parse = exports.json = exports.float = exports.str = exports.int = exports.insert = exports.max = exports.min = exports.sample = exports.extract = exports.byIdx = exports.sorted = exports.shuffle = exports.cartesian = exports.zip = exports.iter = exports.error = exports.print = exports.equal = exports.not = exports.all = exports.any = exports.enumerate = exports.range = exports.select = exports.input = exports.randint = exports.delay = void 0;
 const prompts_1 = __importDefault(require("prompts"));
 async function delay(mis) {
     return new Promise((resolve) => {
@@ -111,14 +130,36 @@ function print(...data) {
     console.log(...data);
 }
 exports.print = print;
-//代理对象
+// type t=typeof a extends Iterable<number>? true:false;
+//可以支持 异步迭代器 异步迭代器生成promise
+function error(msg = "") {
+    throw new Error(msg);
+}
+exports.error = error;
+/**
+ * 可以包装异步和同步迭代器 其中异步迭代器是返回异步 itor的对象
+ * 这个对象的next函数可以返回一个promise  求得promise后和普通itor一样
+ * asyncitor的next返回的是一个Promise  itor返回的是一个itor result
+ * 此promise then后就得到了一个和itor一样的itor result
+ * ! 注意此处问题 由于asynciter和iter并不能互相转化 这里只能把 iter转化为asynciter
+ * ! 而不能把asynciter转化为iter 此处iterator返回的应该是null,即保证同步循环不能对异步迭代器使用
+ */
 class ExtendIteratable {
     constructor(rawIter) {
         this.rawIter = rawIter;
     }
+    [Symbol.asyncIterator]() {
+        if (isAsyncIter(this.raw))
+            return this.rawIter[Symbol.asyncIterator]();
+        return this.map(v => Promise.resolve(v))[Symbol.iterator]();
+    }
+    //如果是async 返回promise<T>
     [Symbol.iterator]() {
+        if (isAsyncIter(this.raw))
+            return this.rawIter[Symbol.asyncIterator]();
         return this.rawIter[Symbol.iterator]();
     }
+    //用于在包装
     //支持链式调用
     //全部采用延后求值方法
     map(cbk) {
@@ -131,11 +172,78 @@ class ExtendIteratable {
                 i++;
             }
         }
+        //async 处理 async iter map后还是async iter
+        async function* ainner() {
+            let i = 0;
+            for await (let a of _this) {
+                yield await cbk(a, i);
+                i++;
+            }
+        }
+        if (isAsyncIter(this.raw)) {
+            return new ExtendIteratable(ainner());
+        }
         return new ExtendIteratable(inner());
     }
+    /**
+     * ! 此函数对异步迭代器调用时会遍历其中元素来得到具体长度，以便转换为同步
+     * 把异步迭代器转换为同步迭代器
+     * 其实是伪的同步迭代器
+     * 由于不知道什么时候结束，不能把异步迭代器当同步迭代器迭代而仅仅是把元素换为Promise<T>
+     * 实际上其元素类型并非promise T 而是其返回的itor result 需要await之后才能知道是否结束
+     * ? 既然sync().then(v) 可以 那么把v变成某种单元素接收器替代接受iter 也可以
+     */
+    async sync() {
+        //对于async的iter 对转换为普通iter
+        //使用异步循环
+        if (isIter(this.raw)) {
+            //如果是普通迭代器，直接返回
+            return this;
+        }
+        else if (isAsyncIter(this.raw)) {
+            //收集所有result的promise，通过对promise使用then 转换promise为值的promise
+            //然后返回值的promise
+            //由于不知道何时结束，这个无法实施，只能一次性收集所有的元素 await后返回返回数组
+            let ar = [];
+            for await (let a of this) {
+                ar.push(a);
+            }
+            return iter(ar);
+        }
+        error("内部错误");
+    }
+    /**
+     * 实际遍历，得到数组
+     */
+    collect() {
+        //对于异步迭代器而言 言语不await就无法知道是否结束 
+        //此函数必然要变为异步函数，因此这里设定，此函数不能在异步迭代器上调用
+        //异步迭代器必须先调用sync函数并等待其结束
+        //对于raw本来就是数组的来说，直接返回其数组
+        if (isAsyncIter(this.raw))
+            error("不能在异步迭代器上调用collect");
+        else if (this.raw instanceof Array) {
+            return this.raw;
+        }
+        else {
+            //收集
+            let ar = [];
+            for (let a of this.raw) {
+                ar.push(a);
+            }
+            return ar;
+        }
+    }
+    //async 迭代器返回的直接就是promise
+    //此函数调用后真正开始循环求值，在此之前，其他函数调用都不会直接执行
     forEach(cbk) {
+        //延迟调用
+        assert(!isAsyncIter(this.raw), "错误，不能对AsyncIterable直接调用forEach,应使用sync函数");
+        //使用sync+forEach 或 map+sync 来模拟原始的foreach
+        let _this = this;
         let i = 0;
         for (let a of this) {
+            //必须是同步的
             cbk(a, i);
             i++;
         }
@@ -144,6 +252,8 @@ class ExtendIteratable {
     get raw() {
         return this.rawIter;
     }
+    //连接两个迭代器
+    //! 未完成 还没有处理async的情况
     concat(b) {
         //延迟调用
         let _this = this;
@@ -162,6 +272,9 @@ function iter(ar) {
     return new ExtendIteratable(ar);
 }
 exports.iter = iter;
+async function* test() {
+    yield 1;
+}
 function* zip(...arraylikes) {
     // arraylikes是一个迭代器数组 T是迭代器的类型数组 arraylinks[0]是第一个迭代器
     // 其内部类型是T[0]，但如果只有一个元素，那么其内部类型就应该直接是T
@@ -382,7 +495,7 @@ function isIter(a) {
 }
 exports.isIter = isIter;
 function isAsyncIter(a) {
-    return Symbol.asyncIterator in a;
+    return Symbol.asyncIterator in a && !(Symbol.iterator in a);
 }
 exports.isAsyncIter = isAsyncIter;
 //数据容器构造区域
@@ -497,4 +610,12 @@ exports.call = call;
 //原始列表未list 普通数组即弱类型数组 普通数组有的函数强类型数组一样有
 //实际分开实现
 //
+//! 数据相关 文件读写
+const fs = __importStar(require("fs/promises"));
+exports.open = fs.open;
+async function close(fhand) {
+    (await fhand).close();
+}
+exports.close = close;
+//把file转换为AsyncIterable 
 //# sourceMappingURL=lib.js.map

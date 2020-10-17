@@ -95,6 +95,7 @@ call(async ()=>{
 * 特殊函数：
   * delay函数，通过回调实现的异步等待函数，结合async await可实现伪多线程
   * cartesian,笛卡尔积，可用于省略多重循环,支持多个迭代器,结合zip可实现很多效果
+  * error 函数，可抛出一个特定消息的错误，简化书写
 * 集合操作函数: any all 等
 * 类型判断函数:
   1. assert，false时抛出异常
@@ -105,6 +106,18 @@ call(async ()=>{
 * node v14.13.0
 * typescript 4.0.3
 其他平台请自行测试
+
+# 新增功能说明(1.0)
+```ts
+  let a=await iter(test()).map(async v=>v+1).map(async v=>v*2).sync().then(v=>{
+      return v.forEach(v=>print(v)).map(v=>v*3).map((v,i)=>v+i).forEach(v=>print(v))
+  });
+  let b=a.collect().length;
+  print(b);
+```
+![](res/2020-10-18-04-47-54.png)
+如上代码演示了统一异步和同步迭代器的扩展迭代器类的使用，未来将添加更多功能，也可自己继承来支持更多函数
+
 # 下一步计划
 1. 添加大量类型判断函数
-2. 丰富扩展迭代器，包括引入外部包
+2. 整理各种工具Type并加入ts-metacode 的generic.ts中
